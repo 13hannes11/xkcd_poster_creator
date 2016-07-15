@@ -18,7 +18,7 @@ import java.util.Collection;
  * @author Hannes
  */
 public class ImageSticher {
-    private final double scaleTo = 1D;
+    private final double scaleTo = 0.1D;
     private static final int IMAGE_TYPE = BufferedImage.TYPE_4BYTE_ABGR;
     private static final Color BACKGROUND_COLOR = Color.BLACK;
 
@@ -27,7 +27,7 @@ public class ImageSticher {
 
     public ImageSticher(final Collection<PathRectangle> rect) {
         this.rectangles = rect;
-        System.out.println("Count: " + rectangles.size());
+        //System.out.println("Count: " + rectangles.size());
         this.initBufferedImage();
     }
 
@@ -37,10 +37,6 @@ public class ImageSticher {
             try {
                 final BufferedImage image = loadImage(rectangle.getPath());
                 //System.out.println(rectangle);
-                //DEBUG
-                if (Math.abs(rectangle.getX()) < 1.0 && Math.abs(rectangle.getX() - 6370) < 1.0)
-                    System.out.print("EXISTS");
-                //ENDDEBUG
                 collage.getGraphics().drawImage(image, (int) (rectangle.getX() * scaleTo), (int) (rectangle.getY() * scaleTo),
                         (int) (rectangle.getWidth() * scaleTo), (int) (rectangle.getHeight() * scaleTo), null);
             } catch (final IOException ex) {

@@ -9,46 +9,33 @@ import xkcd.construction.comparator.AreaComparator;
 import xkcd.construction.comparator.HeightFirstComparator;
 import xkcd.construction.comparator.WidthFirstComparator;
 import xkcd.rectangle.freespace.ClockwiseSplitFreeSpaceRectangle;
-import xkcd.rectangle.freespace.FreeSpaceFactory;
 import xkcd.rectangle.freespace.FreeSpaceRectangle;
 import xkcd.rectangle.imagepath.PathRectangle;
 
-import javax.imageio.ImageIO;
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.TreeSet;
 
 /**
  * @author Hannes
  */
 public class ImageArranger {
 
-    private double ratio;
-    private final boolean top;
-    private final boolean left;
 
-    private FreeSpaceRectangle currentBounds;
-
-    private final TreeSet<FreeSpaceRectangle> freeSpaceArea;
-
-    private final TreeSet<PathRectangle> widthSortedSet;
-    private final TreeSet<PathRectangle> heightSortedSet;
+    private final FreeSpaceRectangle currentBounds;
 
     private final Collection<PathRectangle> placed;
 
+    private final double factor;
+    private final int startStepCount;
+    private final int stopper;
+
     public ImageArranger() {
-        ratio = 1D;
+        factor = 0.5D;
+        startStepCount = 10000;
+        stopper = 500;
+
         currentBounds = null;
-
-        left = false; //Bug with left = true
-        top = false;
-
-        widthSortedSet = new TreeSet<>(new WidthFirstComparator());
-        heightSortedSet = new TreeSet<>(new HeightFirstComparator());
-
-        freeSpaceArea = new TreeSet<>(new AreaComparator());
 
         placed = new ArrayList<>();
 
@@ -72,76 +59,81 @@ public class ImageArranger {
     }
 
     public Collection<PathRectangle> arrangeRectangles(final Collection<PathRectangle> rectangles, final double heightToWidthRatio) {
-        System.out.println("Size: " + rectangles);
-        ratio = heightToWidthRatio;
+        int stepCount = startStepCount;
+
+        int height = stepCount;
+        int width = calcWidthFromHeight(stepCount, heightToWidthRatio);
+
+
+        int direction = 1;
+        boolean readyToStop = false;
+
+        while (!readyToStop || arrangeRectangles(rectangles, width, height) == null) {
+            //Loopcancelpermission: if accuracy is reached (stopper) and direction is from to small to to big (direction > 0)
+            if (stepCount < stopper && direction > 0) {
+                readyToStop = true;
+            }
+            if ((arrangeRectangles(rectangles, width, height) != null && direction > 0)
+                    || (arrangeRectangles(rectangles, width, height) == null && direction < 0)) {
+                stepCount *= factor;
+                direction *= -1;
+            }
+            height += direction * stepCount;
+            width = calcWidthFromHeight(height, heightToWidthRatio);
+            System.out.println("W: " + width + " H:" + height + " StepCount: " + stepCount + " Direction: " + direction +
+                    " ArrangeRectangles: " + ((arrangeRectangles(rectangles, width, height) == null) ? null : arrangeRectangles(rectangles, width, height).size()));
+        }
+
+        return arrangeRectangles(rectangles, width, height);
+    }
+
+    private int calcWidthFromHeight(final int height, final double heightToWidthRatio) {
+        return (int) Math.round(height * heightToWidthRatio);
+    }
+
+    public Collection<PathRectangle> arrangeRectangles(final Collection<PathRectangle> rectangles, final int width, final int height) {
+        //System.out.println("Size: " + rectangles);
+
+        placed.clear();
+        final TreeSet<PathRectangle> widthSortedSet = new TreeSet<>(new WidthFirstComparator());
+        final TreeSet<PathRectangle> heightSortedSet = new TreeSet<>(new HeightFirstComparator());
+
+        final TreeSet<FreeSpaceRectangle> freeSpaceArea = new TreeSet<>(new AreaComparator());
 
         widthSortedSet.addAll(rectangles);
         heightSortedSet.addAll(rectangles);
 
-        freeSpaceArea.add(new ClockwiseSplitFreeSpaceRectangle(0, 0, 30000, 15000));
-        //expandAndPlace(getNextPathRectangle(widthSortedSet.last(), heightSortedSet.last()));
+        freeSpaceArea.add(new ClockwiseSplitFreeSpaceRectangle(0, 0, width, height));
+
         while (widthSortedSet.size() > 0 && heightSortedSet.size() > 0) {
-            //expandAndPlace(getNextPathRectangle(widthSortedSet.last(), heightSortedSet.last()));
+            final PathRectangle _tmp = (widthSortedSet.last().getWidth() > heightSortedSet.last().getHeight()) ? widthSortedSet.last() : heightSortedSet.last();
 
-            final Iterator<PathRectangle> heightIterator = heightSortedSet.descendingIterator();
-            final Iterator<PathRectangle> widthIterator = widthSortedSet.descendingIterator();
+            widthSortedSet.remove(_tmp);
+            heightSortedSet.remove(_tmp);
 
-            final Collection<PathRectangle> pathRectToRemove = new LinkedList<>();
-            boolean oneFree = false;
+            FreeSpaceRectangle _space = null;
 
-            while (heightIterator.hasNext() || widthIterator.hasNext()) {
-                PathRectangle tmpPathRect = null;
-                if (heightIterator.hasNext()) {
-                    tmpPathRect = heightIterator.next();
+            for (final FreeSpaceRectangle s : freeSpaceArea) {
+                if (s.couldContain(_tmp)) {
+                    _space = s;
+                    break;
                 }
-                if (widthIterator.hasNext()) {
-                    if (tmpPathRect == null) {
-                        tmpPathRect = widthIterator.next();
-                    } else {
-                        tmpPathRect = getNextPathRectangle(widthIterator.next(), tmpPathRect);
-                    }
-                }
-                final Collection<FreeSpaceRectangle> freeSpaceToAdd = new ArrayList<>();
-                for (final Iterator<FreeSpaceRectangle> iterator = freeSpaceArea.iterator(); iterator.hasNext(); ) {
-                    final FreeSpaceRectangle nextFree = iterator.next();
-                    if (nextFree.couldContain(tmpPathRect) && !placed.contains(tmpPathRect)) {
-                        //place(nextFree, tmpPathRect, freeSpaceToAdd);
-                        oneFree = true;
-
-                        iterator.remove();
-                        tmpPathRect.setX((int) nextFree.getX());
-                        tmpPathRect.setY((int) nextFree.getY());
-
-
-                        freeSpaceToAdd.addAll(nextFree.divideUp(tmpPathRect));
-                        placed.add(tmpPathRect);
-                        System.out.println("Size: " + placed.size());
-                        //DEBUG
-                        if (Math.abs(tmpPathRect.getWidth() - 612) < 1.0 && Math.abs(tmpPathRect.getHeight() - 6370) < 1.0)
-                            System.out.print("EXISTS");
-                        //ENDDEBUG
-                        System.out.println(tmpPathRect);
-                        //System.out.println("Freespace to add: " + freeSpaceToAdd.size());
-
-
-                        pathRectToRemove.add(tmpPathRect);
-
-                        break;
-                    }
-                }
-                freeSpaceArea.addAll(freeSpaceToAdd);
             }
-            if (!oneFree) {
-                System.out.println("No Space Left");
-                break;
+            //No space means not every image can be placed
+            if (_space == null) {
+                return null;
             }
-            widthSortedSet.removeAll(pathRectToRemove);
-            heightSortedSet.removeAll(pathRectToRemove);
-            //TODO: freeSpaceArea.clear();
+
+            placed.add(_tmp);
+            _tmp.setLocation((int) _space.getX(), (int) _space.getY());
+            freeSpaceArea.addAll(_space.divideUp(_tmp));
+            freeSpaceArea.remove(_space);
         }
+
         shiftToLeftTop();
 
         //<DEBUG>
+        /*
         double spaceHeight = 0;
         double spaceWidth = 0;
         for (final FreeSpaceRectangle rect : freeSpaceArea) {
@@ -169,6 +161,7 @@ public class ImageArranger {
         } catch (final IOException e) {
             e.printStackTrace();
         }
+        */
         //</DEGUB>
         return placed;
     }
@@ -176,85 +169,5 @@ public class ImageArranger {
     private PathRectangle getNextPathRectangle(final PathRectangle widthRec, final PathRectangle heightRect) {
         return (widthRec.getWidth() > heightRect.getHeight())
                 ? widthRec : heightRect;
-    }
-    
-    /*
-    private void place(FreeSpaceRectangle freeSpace, PathRectangle toPlace,){
-        freeSpaceArea.remove(freeSpace);
-        freeSpaceArea.addAll(freeSpace.divideUp(toPlace));
-        
-        heightSortedSet.remove(toPlace);
-        widthSortedSet.remove(toPlace);
-        placed.add(toPlace);
-
-        toPlace.setX((int) freeSpace.getX());
-        toPlace.setY((int) freeSpace.getY());
-    }*/
-
-    private void expandAndPlace(final PathRectangle rect) {
-        final FreeSpaceFactory factory = new FreeSpaceFactory();
-        if (currentBounds == null) {
-            currentBounds = factory.getFreeSpaceRect(0, 0, (int) rect.getWidth(), (int) rect.getHeight());
-
-            rect.setX(0);
-            rect.setY(0);
-
-            addPlaced(rect);
-        } else {
-            final FreeSpaceRectangle tmpNewFree = factory.getFreeSpaceRect((int) currentBounds.getX(), (int) currentBounds.getY(),
-                    (int) currentBounds.getWidth(),
-                    (int) currentBounds.getHeight());
-            //Top or Bottom
-            if (rect.height > rect.width) {
-
-                tmpNewFree.setHeight((int) (currentBounds.getHeight() + rect.getHeight()));
-                tmpNewFree.setWidth((int) (tmpNewFree.getHeight() * ratio));
-
-                if (top) {
-                    final int x = (int) currentBounds.getX();
-                    final int y = (int) (currentBounds.getY() - rect.getHeight());
-
-                    rect.setX(x);
-                    rect.setY(y);
-                    tmpNewFree.setX(x);
-                    tmpNewFree.setY(y);
-                } else {
-                    rect.setX((int) currentBounds.getX());
-                    rect.setY((int) (currentBounds.getY() + currentBounds.getHeight()));
-                }
-                //top = !top;
-            } // Left and Right
-            else {
-                tmpNewFree.setWidth((int) (currentBounds.getWidth() + rect.getWidth()));
-                tmpNewFree.setHeight((int) (tmpNewFree.getWidth() / ratio));
-                if (left) {
-                    //TODO look for bug
-                    final int x = (int) (currentBounds.getX() - rect.getWidth());
-                    final int y = (int) currentBounds.getY();
-
-                    rect.setX(x);
-                    rect.setY(y);
-                    tmpNewFree.setX(x);
-                    tmpNewFree.setY(y);
-                } else {
-                    rect.setX((int) (currentBounds.getX() + currentBounds.getWidth()));
-                    rect.setY((int) currentBounds.getY());
-                }
-                //left = !left;
-            }
-            addPlaced(rect);
-            for (final FreeSpaceRectangle freeSpaceRect : tmpNewFree.divideUp(rect)) {
-                freeSpaceArea.addAll(freeSpaceRect.divideUp(currentBounds));
-                freeSpaceArea.remove(freeSpaceRect);
-            }
-            currentBounds = tmpNewFree;
-        }
-    }
-
-    private void addPlaced(final PathRectangle rect) {
-        widthSortedSet.remove(rect);
-        heightSortedSet.remove(rect);
-        placed.add(rect);
-        System.out.println(rect);
     }
 }
