@@ -14,9 +14,8 @@ import java.util.Comparator;
  */
 public class ImageMegapixelComparator implements Comparator<BufferedImage> {
 
-    @Override
-    public int compare(BufferedImage o1, BufferedImage o2) {
-            return o2.getWidth() * o2.getHeight() - o1.getWidth() * o1.getHeight();
-    }
-    
+	@Override
+	public int compare(final BufferedImage o1, final BufferedImage o2) {
+		return o2.getWidth() * o2.getHeight() - o1.getWidth() * o1.getHeight();
+	}
 }
