@@ -19,7 +19,7 @@ import xkcd.rectangle.imagepath.PathRectangle;
  * @author Hannes
  */
 public class ImageSticher {
-	private static final double DEFAULT_SCALE = 0.1D;
+	private static final double DEFAULT_SCALE = 1D;
 	private static final int IMAGE_TYPE = BufferedImage.TYPE_4BYTE_ABGR;
 	private static final Color BACKGROUND_COLOR = Color.BLACK;
 
