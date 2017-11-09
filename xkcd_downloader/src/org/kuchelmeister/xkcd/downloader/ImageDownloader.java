@@ -16,9 +16,10 @@ public class ImageDownloader {
 		downloadedImages = new LinkedList<>();
 	}
 
-	private void downloadImage(final String url, final String folderPath) throws IOException {
+	private void downloadImage(final String url, final String folderPath, final int counter) throws IOException {
 		final InputStream in = new URL(url).openStream();
-		final String fileName = url.substring(url.lastIndexOf("/")).replaceAll("[^A-Za-z0-9.]", "");
+		final String fileName = "Comic_" + counter;// url.substring(url.lastIndexOf("/")).replaceAll("[^A-Za-z0-9.]",
+													// "");
 
 		downloadedImages.add(folderPath + fileName);
 
@@ -28,9 +29,9 @@ public class ImageDownloader {
 	}
 
 	public void downloadAllImages(final List<String> images, final String folderPath) {
-		for (final String img : images) {
+		for (int i = 0; i < images.size(); i++) {
 			try {
-				this.downloadImage(img, folderPath);
+				this.downloadImage(images.get(i), folderPath, i);
 			} catch (final IOException e) {
 				e.printStackTrace();
 				return;
