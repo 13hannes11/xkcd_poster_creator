@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package xkcd;
+package org.kuchelmeister.xkcd.poster;
 
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;

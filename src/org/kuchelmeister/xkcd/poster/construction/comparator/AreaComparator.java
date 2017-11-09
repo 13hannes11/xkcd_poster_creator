@@ -3,9 +3,9 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package xkcd.construction.comparator;
+package org.kuchelmeister.xkcd.poster.construction.comparator;
 
-import xkcd.rectangle.CustomRectangle;
+import org.kuchelmeister.xkcd.poster.rectangle.CustomRectangle;
 
 import java.util.Comparator;
 

@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package xkcd.construction;
+package org.kuchelmeister.xkcd.poster.construction;
 
 import java.awt.Color;
 import java.awt.image.BufferedImage;
@@ -13,7 +13,7 @@ import java.util.Collection;
 
 import javax.imageio.ImageIO;
 
-import xkcd.rectangle.imagepath.PathRectangle;
+import org.kuchelmeister.xkcd.poster.rectangle.imagepath.PathRectangle;
 
 /**
  * @author Hannes

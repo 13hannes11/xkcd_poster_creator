@@ -1,3 +1,5 @@
+package org.kuchelmeister.xkcd.poster;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
@@ -6,10 +8,10 @@ import java.util.LinkedList;
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileFilter;
 
-import xkcd.construction.ImageArranger;
-import xkcd.construction.ImageDataLoader;
-import xkcd.construction.ImageSticher;
-import xkcd.rectangle.imagepath.PathRectangle;
+import org.kuchelmeister.xkcd.poster.construction.ImageArranger;
+import org.kuchelmeister.xkcd.poster.construction.ImageDataLoader;
+import org.kuchelmeister.xkcd.poster.construction.ImageSticher;
+import org.kuchelmeister.xkcd.poster.rectangle.imagepath.PathRectangle;
 
 public class Main {
 
