@@ -19,8 +19,7 @@ public class ImageDownloader {
 
 	private void downloadImage(final String url, final String folderPath, final int counter) throws IOException {
 		final InputStream in = new URL(url).openStream();
-		final String fileName = "Comic_" + counter;
-		// url.substring(url.lastIndexOf("/")).replaceAll("[^A-Za-z0-9.]", "");
+		final String fileName = "Comic_" + counter + url.substring(url.lastIndexOf("."));
 
 		downloadedImages.add(folderPath + fileName);
 
