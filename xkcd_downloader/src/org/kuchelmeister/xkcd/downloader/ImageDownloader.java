@@ -10,7 +10,8 @@ import java.util.List;
 
 public class ImageDownloader {
 
-	List<String> downloadedImages;
+	private final List<String> downloadedImages;
+	public static final int ERR_EXIT_THRESHOLD = 10; // exit after 10 error is a row
 
 	public ImageDownloader() {
 		downloadedImages = new LinkedList<>();
@@ -18,8 +19,8 @@ public class ImageDownloader {
 
 	private void downloadImage(final String url, final String folderPath, final int counter) throws IOException {
 		final InputStream in = new URL(url).openStream();
-		final String fileName = "Comic_" + counter;// url.substring(url.lastIndexOf("/")).replaceAll("[^A-Za-z0-9.]",
-													// "");
+		final String fileName = "Comic_" + counter;
+		// url.substring(url.lastIndexOf("/")).replaceAll("[^A-Za-z0-9.]", "");
 
 		downloadedImages.add(folderPath + fileName);
 
@@ -29,12 +30,17 @@ public class ImageDownloader {
 	}
 
 	public void downloadAllImages(final List<String> images, final String folderPath) {
+		int errCounter = 0;
 		for (int i = 0; i < images.size(); i++) {
 			try {
 				this.downloadImage(images.get(i), folderPath, i);
+				errCounter = 0;
 			} catch (final IOException e) {
 				e.printStackTrace();
-				return;
+				errCounter++;
+				if (errCounter > ERR_EXIT_THRESHOLD) {
+					return;
+				}
 			}
 		}
 	}
